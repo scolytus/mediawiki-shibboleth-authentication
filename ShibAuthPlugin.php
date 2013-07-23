@@ -133,7 +133,7 @@ class ShibAuthPlugin extends AuthPlugin {
          * @access public
          */
         function autoCreate() {
-                return true;
+                return false;
         }
 
         /**
@@ -195,9 +195,10 @@ class ShibAuthPlugin extends AuthPlugin {
          * @param $email String
          * @param $realname String
          * @return Boolean
+
          */
         public function addUser( $user, $password, $email = '', $realname = '' ) {
-                return false;
+                return true;
         }
 
 
@@ -211,7 +212,7 @@ class ShibAuthPlugin extends AuthPlugin {
          * @access public
          */
         function strict() {
-                return false;
+                return true;
         }
 
         /**
@@ -253,7 +254,7 @@ function ShibGetAuthHook() {
 $wgExtensionFunctions[] = 'SetupShibAuth';
 $wgExtensionCredits['other'][] = array(
                         'name' => 'Shibboleth Authentication',
-                        'version' => '1.2.3',
+                        'version' => '1.2.3 modified by ZID, TU-Graz',
                         'author' => "Regents of the University of California, Steven Langenaken",
                         'url' => "http://www.mediawiki.org/wiki/Extension:Shibboleth_Authentication",
                         'description' => "Allows logging in through Shibboleth",
@@ -298,35 +299,46 @@ function ShibLinkAdd(&$personal_urls, $title)
         else
                 $shib_ConsumerPrefix = '';
         $pageurl = $title->getLocalUrl();
+
+        // evtl. muss man hier den Pfad anders berechnen/angeben, testen!
+        // z.B.:
+        // $pageurl = '/wiki/';
+
         if (! isset($shib_LoginHint))
                 $shib_LoginHint = "Login via Single Sign-on";
 
         $personal_urls['SSOlogin'] = array(
                         'text' => $shib_LoginHint,
                         'href' => ($shib_Https ? 'https' :  'http') .'://' . $_SERVER['HTTP_HOST'] .
-                        $shib_AssertionConsumerServiceURL . "/" . $shib_ConsumerPrefix . "Login" .
+                        $shib_AssertionConsumerServiceURL . "/" . $shib_ConsumerPrefix . $shib_WAYF .
                         '?target=' . (isset($_SERVER['HTTPS']) ? 'https' : 'http') .
                         '://' . $_SERVER['HTTP_HOST'] . $pageurl, );
+
+        //ph remove std. anmelden link
+        unset($personal_urls['login']);
         return true;
 }
 
 /* Kill logout link */
 function ShibActive(&$personal_urls, $title)
 {
-        global $shib_LogoutHint, $shib_Https, $shib_AssertionConsumerServiceURL;
+        global $shib_logout;
         global $shib_RN;
         global $shib_map_info;
 
-        $personal_urls['logout'] = array(
-                'text' => $shib_LogoutHint,
-                'href' => ($shib_Https ? 'https' : 'http') .'://' . $_SERVER['HTTP_HOST'] .
-                $shib_AssertionConsumerServiceURL . "/Logout" .
-                '?return=' . (isset($_SERVER['HTTPS']) ? 'https' : 'http') .
-                '://'. $_SERVER['HTTP_HOST']. "/index.php?title=Special:UserLogout&amp;returnto=" .
-                $title->getPartialURL());
+        // unset( $personal_urls['logout'] );
 
-        if ($shib_RN && $shib_map_info)
+        if($shib_logout == null) {
+                $personal_urls['logout'] = null;
+        }
+        else {
+                $personal_urls['logout']['href'] = $shib_logout;
+                $personal_urls['logout']['text'] = 'Shibboleth Logout';
+        }
+
+        if ($shib_RN && $shib_map_info) {
                 $personal_urls['userpage']['text'] = $shib_RN;
+        }
 
         return true;
 }
@@ -373,6 +385,9 @@ function ShibUserLoadFromSession($user, &$result)
                 wfSetupSession();
                 $user->setCookies();
                 return true;
+        }
+        else {
+                return false;
         }
 
         //Place the hook back (Not strictly necessarily MW Ver >= 1.9)
