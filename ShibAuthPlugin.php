@@ -133,7 +133,14 @@ class ShibAuthPlugin extends AuthPlugin {
          * @access public
          */
         function autoCreate() {
-                return true;
+                global $shib_autoCreateUser;
+
+                if (! isset($shib_autoCreateUser) || $shib_autoCreateUser == '') {
+                        // default to true
+                        return true;
+                } else {
+                        return $shib_autoCreateUser;
+                }
         }
 
         /**
