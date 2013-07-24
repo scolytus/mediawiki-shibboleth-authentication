@@ -133,7 +133,7 @@ class ShibAuthPlugin extends AuthPlugin {
          * @access public
          */
         function autoCreate() {
-                return false;
+                return true;
         }
 
         /**
@@ -304,6 +304,8 @@ function ShibLinkAdd(&$personal_urls, $title)
         // z.B.:
         // $pageurl = '/wiki/';
 
+        $pageurl = '/wiki/index.php';
+
         if (! isset($shib_LoginHint))
                 $shib_LoginHint = "Login via Single Sign-on";
 
@@ -349,6 +351,7 @@ function ShibAutoAuthenticate(&$user) {
 /* Tries to be magical about when to log in users and when not to. */
 function ShibUserLoadFromSession($user, &$result)
 {
+        global $IP;
         global $wgContLang;
         global $wgAuth;
         global $shib_UN;
@@ -386,7 +389,9 @@ function ShibUserLoadFromSession($user, &$result)
                 $user->setCookies();
                 return true;
         }
-        else {
+
+        if (! autoCreate())
+        {
                 return false;
         }
 
