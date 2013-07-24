@@ -105,11 +105,22 @@ class ShibAuthPlugin extends AuthPlugin {
          * @access public
          */
         function updateUser( &$user ) {
+                global $shib_RN;
+                global $shib_email;
+
                 wfRunHooks('ShibUpdateUser', array($this->existingUser, &$user));
 
                 //For security, set password to a non-existant hash.
                 if ($user->mPassword != "nologin"){
                         $user->mPassword = "nologin";
+                }
+
+                if (isset($shib_RN) && $shib_RN != '') {
+                        $user->setRealName($shib_RN);
+                }
+
+                if (isset($shib_email) && $shib_email != '') {
+                        $user->setEmail($shib_email);
                 }
 
                 $user->setOption('rememberpassword', 0);
